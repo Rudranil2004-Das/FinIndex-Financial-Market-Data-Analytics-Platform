@@ -1,0 +1,6 @@
+Flask>=3.0
+pandas>=2.1
+numpy>=1.26
+matplotlib>=3.8
+# Optional: only needed if you switch to MySQL
+# mysql-connector-python>=8.4
