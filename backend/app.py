@@ -1,5 +1,6 @@
 """FinIndex Flask application entry point.  Run:  python app.py"""
 import os
+from pathlib import Path
 
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
@@ -18,17 +19,38 @@ from utils.logger import get_logger
 log = get_logger()
 
 
+def seed_if_empty() -> None:
+    """On hosts where the SQLite file resets (e.g. Render free), reload the sample data."""
+    if os.environ.get("AUTO_LOAD_SAMPLE") != "true":
+        return
+    from database.db_operations import counts, run_import
+    from modules.data_loader import load_csv
+
+    if counts()["stocks"] == 0:
+        csv = Path(__file__).resolve().parents[1] / "data" / "sample" / "sample_stocks.csv"
+        if csv.exists():
+            run_import(csv.name, load_csv(csv))
+            log.info("Sample data loaded")
+        else:
+            log.warning("AUTO_LOAD_SAMPLE is on but %s was not found", csv)
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024        # 10 MB uploads
     init_db()
+    seed_if_empty()
 
     for bp in (system_bp, dashboard_bp, stock_bp, import_bp, validation_bp, analytics_bp, index_bp):
         app.register_blueprint(bp)
 
+    @app.get("/")
+    def root():
+        return jsonify({"service": "FinIndex API", "status": "running", "health": "/api/health"})
+
     @app.after_request
     def add_headers(resp):
-        # Open CORS for local development (Vite also proxies /api, so this is a fallback)
+        # Set FININDEX_CORS_ORIGIN to your Vercel URL in production
         resp.headers["Access-Control-Allow-Origin"] = os.environ.get("FININDEX_CORS_ORIGIN", "*")
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
