@@ -44,14 +44,22 @@ def create_app() -> Flask:
     for bp in (system_bp, dashboard_bp, stock_bp, import_bp, validation_bp, analytics_bp, index_bp):
         app.register_blueprint(bp)
 
+    # FININDEX_CORS_ORIGIN: "*" or a comma-separated list of origins (no trailing slash needed)
+    allowed = [o.strip().rstrip("/") for o in os.environ.get("FININDEX_CORS_ORIGIN", "*").split(",") if o.strip()]
+    allow_vercel = os.environ.get("ALLOW_VERCEL_PREVIEWS", "true") == "true"
+
     @app.get("/")
     def root():
         return jsonify({"service": "FinIndex API", "status": "running", "health": "/api/health"})
 
     @app.after_request
     def add_headers(resp):
-        # Set FININDEX_CORS_ORIGIN to your Vercel URL in production
-        resp.headers["Access-Control-Allow-Origin"] = os.environ.get("FININDEX_CORS_ORIGIN", "*")
+        origin = request.headers.get("Origin", "").rstrip("/")
+        if "*" in allowed:
+            resp.headers["Access-Control-Allow-Origin"] = "*"
+        elif origin in allowed or (allow_vercel and origin.startswith("https://") and origin.endswith(".vercel.app")):
+            resp.headers["Access-Control-Allow-Origin"] = origin
+            resp.headers["Vary"] = "Origin"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
         if request.path.startswith("/api"):
