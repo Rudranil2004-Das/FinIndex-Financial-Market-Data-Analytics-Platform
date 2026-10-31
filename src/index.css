@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Themes are channel triplets so Tailwind opacity modifiers keep working */
+:root, [data-theme="navy"] {
+  --bg: 10 16 32; --panel: 27 34 48; --raised: 36 44 62; --line: 51 62 84;
+  --accent: 59 130 246; --ink: 226 232 240; --muted: 140 152 172;
+}
+[data-theme="midnight"] {
+  --bg: 4 8 20; --panel: 15 22 38; --raised: 24 33 54; --line: 38 50 76;
+  --accent: 96 165 250; --ink: 226 232 240; --muted: 130 143 166;
+}
+[data-theme="graphite"] {
+  --bg: 18 20 24; --panel: 31 34 40; --raised: 41 45 53; --line: 58 63 73;
+  --accent: 45 212 191; --ink: 230 233 238; --muted: 150 156 168;
+}
+
+@layer base {
+  body { @apply bg-bg text-ink font-sans antialiased; font-variant-numeric: tabular-nums; }
+  :focus-visible { @apply outline outline-2 outline-offset-2 outline-accent; }
+  th { @apply text-left font-medium text-muted; }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+}
+
+@layer components {
+  .card { @apply bg-panel border border-line rounded-lg; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-md border border-line bg-raised px-3 py-2 text-sm font-medium text-ink transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply border-accent bg-accent text-white hover:brightness-110; }
+  .input { @apply w-full rounded-md border border-line bg-bg px-3 py-2 text-sm text-ink placeholder:text-muted; }
+  .table-wrap { @apply overflow-x-auto; }
+  .table { @apply w-full min-w-[540px] text-sm; }
+  .table th, .table td { @apply px-3 py-2.5; }
+  .table tbody tr { @apply border-t border-line; }
+  .table tbody tr:hover { @apply bg-raised/60; }
+}
